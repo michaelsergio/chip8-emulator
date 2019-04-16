@@ -16,6 +16,8 @@ const BLOCK: char = '\u{2588}';
 const ROWS:usize = 32;
 const COLS:usize = 64;
 
+const ECHO_SOUND: char = 7 as char;
+
 type Font = [u8; 5];
 
 const FONT_SPRITES: [Font; 16] = [
@@ -25,7 +27,7 @@ const FONT_SPRITES: [Font; 16] = [
     [0xF0, 0x10, 0xF0, 0x10, 0xF0],
     [0x90, 0x90, 0xF0, 0x10, 0x10],
     [0xF0, 0x80, 0xF0, 0x10, 0xF0],
-    [0xF0, 0x90, 0xF0, 0x90, 0x90],
+    [0xF0, 0x80, 0xF0, 0x90, 0xF0],
     [0xF0, 0x10, 0x20, 0x40, 0x40],
     [0xF0, 0x90, 0xF0, 0x90, 0xF0],
     [0xF0, 0x90, 0xF0, 0x10, 0xF0],
@@ -93,11 +95,9 @@ fn main() {
         }
     }
 
-    for i in 0..16 {
-        let f = FONT_SPRITES[i];
-        draw_font(f);
-        println!("");
-    }
+    dump_fonts();
+    //println!("{}", ECHO_SOUND);
+    //debug_screen(&chip8);
 
     //draw(&chip8);
 
@@ -147,11 +147,10 @@ fn main() {
     // FX65 LD reg_load(Vxm &I)
 }
 
-fn draw_font(font: Font) {
-    let first: u8 = 0x80;
+fn debug_font(font: Font) {
     for part in &font {
         for i in 0..4 {
-            let val = (part << i) & first;
+            let val = (part << i) & (0x80 as u8);
             let glyph = if val != (0 as u8) { BLOCK } else { ' ' };
             print!("{}", glyph);
         }
@@ -159,6 +158,21 @@ fn draw_font(font: Font) {
     }
 }
 
+
+fn debug_screen(chip8: &Chip8) {
+    for y in 0..32 {
+        for x in 0..16 {
+            let i = y * 32 + x;
+            let val = chip8.memory[DISPLAY + i];
+            for z in 0..4 {
+                //let glyph = if z == 0 { BLOCK } else { ' ' };
+                let glyph = 'x';
+                print!("{}", glyph);
+            }
+        }
+        print!("\n");
+    }
+}
 
 fn draw(chip8: &Chip8) {
     for y in 0..ROWS - 1 {
@@ -169,5 +183,13 @@ fn draw(chip8: &Chip8) {
             print!("{}", glyph);
         }
         print!("\n");
+    }
+}
+
+fn dump_fonts() {
+    for i in 0..16 {
+        let f = FONT_SPRITES[i];
+        debug_font(f);
+        println!("");
     }
 }
