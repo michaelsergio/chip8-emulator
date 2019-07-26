@@ -156,6 +156,27 @@ impl Chip8 {
                 self.v[v_x] = random & kk;
         }
 
+        //Dxyn
+        pub fn draw(&mut self, v_x: usize, v_y:usize, n: u8) {
+                // read n bytes from memory I
+                // nibble is max 16 
+                let mut read: [u8; 16] = [0; 16];
+                for i in 0..n {
+                        read[i as usize] = self.memory[(self.i + (i as u16)) as usize];
+                }
+                let isErased = self.setScreen(self.v[v_x], self.v[v_y], &read, n);
+                if isErased { self.v[0xF] = 1; }
+                else { self.v[0xF] = 0; }
+        }
+
+        fn setScreen(&mut self, x: u8, y:u8, read: &[u8; 16], n: u8) -> bool {
+                // display at (x,y) on screen.
+                // xor the bytes onto the screen
+                // be sure to wrap around dispay.
+                // return true if xor erases
+                return false
+        }
+
         pub fn clearScreen(&mut self) {}
 
 
@@ -199,7 +220,7 @@ impl Chip8 {
                 else if opcode == 0xA { self.loadI(arg3(b0, b1)) }
                 else if opcode == 0xB { println!("JP V0, {:#X}", arg3(b0, b1)) }
                 else if opcode == 0xC { self.rand(x as usize, b1) }
-                else if opcode == 0xD { println!("TODO DRW V{:X} V{:X} {:X}", x, y, n) }
+                else if opcode == 0xD { self.draw(x as usize, y as usize, n) }
                 else if opcode == 0xE { println!("SKP V{:X}", x) }
                 else if opcode == 0xF { 
                         if b1 == 0x07 { println!("LD V{}, DT", x) }
