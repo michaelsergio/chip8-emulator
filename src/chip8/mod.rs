@@ -1,3 +1,6 @@
+extern crate rand;
+use rand::random;
+
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.1
 
 // 4096 memory
@@ -59,18 +62,28 @@ pub struct Chip8 {
         pub timer_sound: u8,
 
         pub pc: u16,
-        pub sp: u8
+        pub sp: u8,
+        pub i: u16
 }
 
 impl Chip8 {
+        pub fn fetch(&mut self) -> (u8, u8) {
+                // fetch
+                let b0 = self.memory[(self.pc + 0) as usize];
+                let b1 = self.memory[(self.pc + 1) as usize];
+                // increment the pc
+                self.pc += 2;
+                return (b0, b1);
+        }
         // TODO cls
         pub fn ret(&mut self) {
                 self.pc = self.memory[CALLSTACK + (self.sp as usize)] as u16;
                 self.sp -= 1;
         }
-        pub fn jump(&mut self, nnn: u8) {
-                self.pc = nnn as u16;
+        pub fn jump(&mut self, nnn: u16) {
+                self.pc = nnn;
         }
+        // 3xkk
         pub fn se_byte(&mut self, v_x: usize, byte: u8) {
                 if (self.v[v_x] == byte) {
                         self.pc += 2;
@@ -132,8 +145,81 @@ impl Chip8 {
                         },
                 }
         }
+        // A 
+        pub fn loadI(&mut self, nnn: u16) {
+                self.i = nnn;
+        }
+
+        //Cxkk
+        pub fn rand(&mut self, v_x: usize, kk: u8) {
+                let random = rand::random::<u8>();
+                self.v[v_x] = random & kk;
+        }
+
+        pub fn clearScreen(&mut self) {}
+
+
+        // Given a fetched instruction, decode and execute the function
+        pub fn decodeExecute(&mut self, b0: u8, b1: u8) {
+                let opcode = b0 >> 4;
+                let arg0 = b0 & 0x0F;
+                let arg1 = b1 >> 4;
+                let arg2 = b1 & 0x0F;
+                let x = b0 & 0x0F;
+                let y = b1 >> 4;
+                let n = b1 & 0x0F;
+                // println!("{} {:01x} {:01x} {:01x} ", opcode, arg0, arg1, arg2);
+                if opcode == 0 { 
+                        if arg0 == 0 && arg1 == 0xE {
+                                if arg2 == 0 { self.clearScreen(); }
+                                else if arg2 == 0xE { self.ret(); }
+                        }
+                        println!("SYS???");
+                }
+                else if opcode == 1 { self.jump(arg3(b0, b1)); }
+                else if opcode == 2 { println!("CALL {:#X}", arg3(b0, b1)) }
+                else if opcode == 3 { self.se_byte(x as usize, b1)}
+                else if opcode == 4 { println!("SNE V{:X}, {:#X} ({})", x, b1, b1) }
+                else if opcode == 5 { println!("SE V{:X}, V{:X}", x, y) }
+                else if opcode == 6 { println!("LD V{:X}, {:#X} ({})", b0 & 0x0F, b1, b1) }
+                else if opcode == 7 { self.add(x as usize, b1) }
+                else if opcode == 8 { 
+                        if arg2 == 0 { println!("LD V{:X} = V{:X} ", x, y); }
+                        else if arg2 == 1 { println!("OR, V{:X}, V{:X}", x, y) }
+                        else if arg2 == 2 { println!("AND, V{:X} V{:X}", x, y) }
+                        else if arg2 == 3 { println!("XOR, V{:X} V{:X}", x, y) }
+                        else if arg2 == 4 { println!("ADD, V{:X} V{:X}", x, y) }
+                        else if arg2 == 5 { println!("SUB, V{:X} V{:X}", x, y) }
+                        else if arg2 == 6 { println!("SHR, V{:X} >> 1", x) }
+                        else if arg2 == 7 { println!("SUBN, V{:X} V{:X}", x, y) }
+                        else if arg2 == 0xE { println!("SHL, V{:X} << 1", x) }
+                        println!("MATH???") 
+                }
+                else if opcode == 9 { println!("SNE V{:X}, V{:X}", x, y) }
+                else if opcode == 0xA { self.loadI(arg3(b0, b1)) }
+                else if opcode == 0xB { println!("JP V0, {:#X}", arg3(b0, b1)) }
+                else if opcode == 0xC { self.rand(x as usize, b1) }
+                else if opcode == 0xD { println!("TODO DRW V{:X} V{:X} {:X}", x, y, n) }
+                else if opcode == 0xE { println!("SKP V{:X}", x) }
+                else if opcode == 0xF { 
+                        if b1 == 0x07 { println!("LD V{}, DT", x) }
+                        if b1 == 0x0A { println!("LD V{}, KEY", x) }
+                        if b1 == 0x15 { println!("LD DT, V{:X}", x) }
+                        if b1 == 0x18 { println!("LD, ST, V{:X}", x) }
+                        if b1 == 0x1E { println!("ADD I, V{:X}", x) }
+                        if b1 == 0x29 { println!("LD F, V{:X}", x) }
+                        if b1 == 0x33 { println!("LD BCD, V{:X}", x) }
+                        if b1 == 0x55 { println!("LD [I], V{}", x) }
+                        if b1 == 0x65 { println!("LD V{}, [I]", x) }
+                        else { println!("??")}
+                }
+                else { println!("??") }
+        }
 }
 
+fn arg3(b0: u8, b1: u8) -> u16 {
+        return (((b0 & 0x0F) as u16) << 8) | b1 as u16;
+}
 // Opcode table
 // 35 ops 2 bytes long big endian
 
