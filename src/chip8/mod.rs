@@ -220,7 +220,7 @@ impl Chip8 {
                 else if opcode == 0xA { self.loadI(arg3(b0, b1)) }
                 else if opcode == 0xB { println!("JP V0, {:#X}", arg3(b0, b1)) }
                 else if opcode == 0xC { self.rand(x as usize, b1) }
-                else if opcode == 0xD { self.draw(x as usize, y as usize, n) }
+                else if opcode == 0xD { self.draw(x as usize, y as usize, n as usize) }
                 else if opcode == 0xE { println!("SKP V{:X}", x) }
                 else if opcode == 0xF { 
                         if b1 == 0x07 { println!("LD V{}, DT", x) }
