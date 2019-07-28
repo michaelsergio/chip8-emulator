@@ -146,7 +146,7 @@ impl Chip8 {
                 }
         }
         // A 
-        pub fn loadI(&mut self, nnn: u16) {
+        pub fn load_i(&mut self, nnn: u16) {
                 self.i = nnn;
         }
 
@@ -164,12 +164,12 @@ impl Chip8 {
                 for i in 0..n {
                         read[i as usize] = self.memory[(self.i + (i as u16)) as usize];
                 }
-                let isErased = self.setScreen(self.v[v_x], self.v[v_y], &read[0..n]);
-                if isErased { self.v[0xF] = 1; }
+                let is_erased = self.set_screen(self.v[v_x], self.v[v_y], &read[0..n]);
+                if is_erased { self.v[0xF] = 1; }
                 else { self.v[0xF] = 0; }
         }
 
-        fn setScreen(&mut self, x: u8, y:u8, read: &[u8]) -> bool {
+        fn set_screen(&mut self, x: u8, y:u8, read: &[u8]) -> bool {
                 // display at (x,y) on screen.
                 // xor the bytes onto the screen
                 // be sure to wrap around dispay.
@@ -177,11 +177,11 @@ impl Chip8 {
                 return false
         }
 
-        pub fn clearScreen(&mut self) {}
+        pub fn clear_screen(&mut self) {}
 
 
         // Given a fetched instruction, decode and execute the function
-        pub fn decodeExecute(&mut self, b0: u8, b1: u8) {
+        pub fn decode_execute(&mut self, b0: u8, b1: u8) {
                 let opcode = b0 >> 4;
                 let arg0 = b0 & 0x0F;
                 let arg1 = b1 >> 4;
@@ -192,7 +192,7 @@ impl Chip8 {
                 // println!("{} {:01x} {:01x} {:01x} ", opcode, arg0, arg1, arg2);
                 if opcode == 0 { 
                         if arg0 == 0 && arg1 == 0xE {
-                                if arg2 == 0 { self.clearScreen(); }
+                                if arg2 == 0 { self.clear_screen(); }
                                 else if arg2 == 0xE { self.ret(); }
                         }
                         println!("SYS???");
@@ -217,7 +217,7 @@ impl Chip8 {
                         println!("MATH???") 
                 }
                 else if opcode == 9 { println!("SNE V{:X}, V{:X}", x, y) }
-                else if opcode == 0xA { self.loadI(arg3(b0, b1)) }
+                else if opcode == 0xA { self.load_i(arg3(b0, b1)) }
                 else if opcode == 0xB { println!("JP V0, {:#X}", arg3(b0, b1)) }
                 else if opcode == 0xC { self.rand(x as usize, b1) }
                 else if opcode == 0xD { self.draw(x as usize, y as usize, n as usize) }

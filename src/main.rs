@@ -89,7 +89,7 @@ fn run_with_debug(chip8: &mut Chip8) {
     let (b0, b1) = chip8.fetch();
     
     // decode / execute
-    chip8.decodeExecute(b0, b1);
+    chip8.decode_execute(b0, b1);
     debug_registers(&chip8);
 }
 
