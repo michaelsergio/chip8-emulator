@@ -89,11 +89,13 @@ impl Chip8 {
                         self.pc += 2;
                 }
         }
+        // 4xkk
         pub fn sne(&mut self, v_x: usize, byte: u8) {
                 if (self.v[v_x] != byte) {
                         self.pc += 2;
                 }
         }
+        // 5xy0
         pub fn se_reg(&mut self, v_x: usize, v_y: usize) {
                 if (self.v[v_x] == self.v[v_y]) {
                         self.pc += 2;
@@ -115,12 +117,15 @@ impl Chip8 {
         pub fn or(&mut self, v_x: usize, v_y: usize) {
                 self.v[v_x] |= self.v[v_y];
         }
+        // 8xy2
         pub fn and(&mut self, v_x: usize, v_y: usize) {
                 self.v[v_x] &= self.v[v_y];
         }
+        // 8xy3
         pub fn xor(&mut self, v_x: usize, v_y: usize) {
                 self.v[v_x] ^= self.v[v_y];
         }
+        // 8xy4
         pub fn add_with_carry(&mut self, v_x: usize, v_y: usize) {
                 match self.v[v_x].checked_add(self.v[v_y]) {
                         None => {
@@ -133,6 +138,7 @@ impl Chip8 {
                         },
                 }
         }
+        // 8xy5
         pub fn sub_with_borrow(&mut self, v_x: usize, v_y: usize) {
                 match self.v[v_x].checked_sub(self.v[v_y]) {
                         None => {
@@ -145,9 +151,20 @@ impl Chip8 {
                         },
                 }
         }
-        // A 
+        // 8xy6
+        // 8xy7
+        // 8xyE
+        // 9xy0
+        // TODO 
+
+        // Annn
         pub fn load_i(&mut self, nnn: u16) {
                 self.i = nnn;
+        }
+
+        // Bnnn
+        pub fn jump_to_v0(&mut self, offset: u16) {
+            self.pc = self.v[0] as u16 + offset;
         }
 
         //Cxkk
@@ -180,6 +197,66 @@ impl Chip8 {
         pub fn clear_screen(&mut self) {}
 
 
+
+        // Ex9E
+        pub fn skip_if_key_pressed(&mut self, v_x: usize) {
+                if is_key_down(self.v[v_x]) { 
+                    self.pc += 2;
+                }
+        }
+        // ExA1
+        pub fn skip_if_key_not_pressed(&mut self, v_x: usize) {
+                if !is_key_down(self.v[v_x]) { 
+                    self.pc += 2;
+                }
+        }
+        // Fx07
+        pub fn load_delay_timer(&mut self, v_x: usize) {
+            self.v[v_x] = self.timer_delay;
+        }
+        // Fx0A
+        pub fn load_key_press(&mut self, v_x: usize) {
+            self.v[v_x] = get_key();
+        }
+        // Fx15
+        pub fn set_delay_timer(&mut self, v_x: usize) {
+            self.timer_delay = self.v[v_x];
+        }
+        // Fx18
+        pub fn set_sound_timer(&mut self, v_x: usize) {
+            self.timer_sound = self.v[v_x];
+        }
+        // Fx1E
+        pub fn add_i(&mut self, v_x: usize) {
+            self.i += self.v[v_x] as u16;
+        }
+        // Fx29
+        // TODO 
+
+        // Fx33
+        pub fn load_bcd(&mut self, v_x: usize) {
+            let val =self.v[v_x];
+            let hundreds = val / 100;
+            let tens = val % 100 / 10;
+            let ones = val % 10;
+            self.memory[(self.i + 0) as usize] =  hundreds;
+            self.memory[(self.i + 1) as usize] =  tens;
+            self.memory[(self.i + 2) as usize] =  ones;
+        }
+        // Fx55
+        pub fn store_registers(&mut self) {
+            for i in 0..16 {
+                self.memory[self.i as usize + i] = self.v[i as usize]
+            }
+        }
+        // Fx65
+        pub fn recall_registers(&mut self) {
+            for i in 0..16 {
+                self.v[i as usize] = self.memory[self.i as usize + i] 
+            }
+        }
+
+
         // Given a fetched instruction, decode and execute the function
         pub fn decode_execute(&mut self, b0: u8, b1: u8) {
                 let opcode = b0 >> 4;
@@ -202,10 +279,10 @@ impl Chip8 {
                 else if opcode == 3 { self.se_byte(x as usize, b1)}
                 else if opcode == 4 { println!("SNE V{:X}, {:#X} ({})", x, b1, b1) }
                 else if opcode == 5 { println!("SE V{:X}, V{:X}", x, y) }
-                else if opcode == 6 { println!("LD V{:X}, {:#X} ({})", b0 & 0x0F, b1, b1) }
+                else if opcode == 6 { self.load(x as usize, b1) }
                 else if opcode == 7 { self.add(x as usize, b1) }
                 else if opcode == 8 { 
-                        if arg2 == 0 { println!("LD V{:X} = V{:X} ", x, y); }
+                        if arg2 == 0 { self.load_reg(x as usize, y as usize)}
                         else if arg2 == 1 { println!("OR, V{:X}, V{:X}", x, y) }
                         else if arg2 == 2 { println!("AND, V{:X} V{:X}", x, y) }
                         else if arg2 == 3 { println!("XOR, V{:X} V{:X}", x, y) }
@@ -214,7 +291,7 @@ impl Chip8 {
                         else if arg2 == 6 { println!("SHR, V{:X} >> 1", x) }
                         else if arg2 == 7 { println!("SUBN, V{:X} V{:X}", x, y) }
                         else if arg2 == 0xE { println!("SHL, V{:X} << 1", x) }
-                        println!("MATH???") 
+                        else { println!("MATH???") }
                 }
                 else if opcode == 9 { println!("SNE V{:X}, V{:X}", x, y) }
                 else if opcode == 0xA { self.load_i(arg3(b0, b1)) }
@@ -240,6 +317,15 @@ impl Chip8 {
 
 fn arg3(b0: u8, b1: u8) -> u16 {
         return (((b0 & 0x0F) as u16) << 8) | b1 as u16;
+}
+
+fn is_key_down(key: u8) -> bool {
+    // TODO
+    false
+}
+fn get_key() -> u8 {
+    // TODO
+    1
 }
 // Opcode table
 // 35 ops 2 bytes long big endian
