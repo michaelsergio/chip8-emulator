@@ -157,19 +157,19 @@ impl Chip8 {
         }
 
         //Dxyn
-        pub fn draw(&mut self, v_x: usize, v_y:usize, n: u8) {
+        pub fn draw(&mut self, v_x: usize, v_y:usize, n: usize) {
                 // read n bytes from memory I
                 // nibble is max 16 
                 let mut read: [u8; 16] = [0; 16];
                 for i in 0..n {
                         read[i as usize] = self.memory[(self.i + (i as u16)) as usize];
                 }
-                let isErased = self.setScreen(self.v[v_x], self.v[v_y], &read, n);
+                let isErased = self.setScreen(self.v[v_x], self.v[v_y], &read[0..n]);
                 if isErased { self.v[0xF] = 1; }
                 else { self.v[0xF] = 0; }
         }
 
-        fn setScreen(&mut self, x: u8, y:u8, read: &[u8; 16], n: u8) -> bool {
+        fn setScreen(&mut self, x: u8, y:u8, read: &[u8]) -> bool {
                 // display at (x,y) on screen.
                 // xor the bytes onto the screen
                 // be sure to wrap around dispay.
