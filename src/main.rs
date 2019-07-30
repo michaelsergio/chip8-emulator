@@ -26,15 +26,21 @@ fn main() {
         sp: 0,
         i: 0
     };
-    
 
+    
     // Input - hex keyboard: 16 keys 0-F.
-    // 8,4,6,2 for directional input
+    // 1 2 3 C
+    // 4 5 6 D
+    // 7 8 9 E
+    // A 0 B F
+
+    let keyboard_state: [bool; 16] = [false; 16];
 
     // Graphics is 64x32 monochrome
     // Sprites are 8 wide 1-15 in height
     // xor'd to screen pixels
     // Carry flag VF is set to 1 if pixels are flipped when sprite drawn or else 0
+    let graphics_state: [bool; ROWS*COLS] = [false; ROWS*COLS];
 
     // load fonts
     chip8.load_fonts();
@@ -64,7 +70,7 @@ fn main() {
     let bytes = fs::read(path).unwrap();
 
     println!("Loading {} into memory", path);
-    let start = 0x200;
+    let start = DATA;
     for i in 0..bytes.len() {
         chip8.memory[start + i] = bytes[i];
     }
