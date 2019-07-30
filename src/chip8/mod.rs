@@ -75,13 +75,29 @@ impl Chip8 {
                 self.pc += 2;
                 return (b0, b1);
         }
+        // 00E0
         // TODO cls
+        pub fn clear_screen(&mut self) {}
+
+        // 00EE
         pub fn ret(&mut self) {
-                self.pc = self.memory[CALLSTACK + (self.sp as usize)] as u16;
-                self.sp -= 1;
+            let pc0 = self.memory[CALLSTACK + (self.sp as usize * 2)];
+            let pc1 = self.memory[CALLSTACK + (self.sp as usize * 2 + 1)];
+            self.pc = ((pc0 as u16) << 8) | pc1 as u16;
+            self.sp -= 1;
         }
+        // 1nnn
         pub fn jump(&mut self, nnn: u16) {
                 self.pc = nnn;
+        }
+        // 2nnn
+        pub fn call(&mut self, nnn: u16) {
+            self.sp += 1;
+            let pc0 = (self.pc >> 8) as u8;
+            let pc1 = (self.pc & 0xFF) as u8;
+            self.memory[CALLSTACK + (self.sp as usize * 2)] = pc0;
+            self.memory[CALLSTACK + (self.sp as usize * 2 + 1)] = pc1;
+            self.pc = nnn
         }
         // 3xkk
         pub fn se_byte(&mut self, v_x: usize, byte: u8) {
@@ -152,10 +168,32 @@ impl Chip8 {
                 }
         }
         // 8xy6
+        pub fn shr(&mut self, v_x: usize, v_y: usize) {
+            let x = self.v[v_x];
+            self.v[0xF] = x & 0x1; // lsb underflow
+            self.v[v_x] >> 1;
+        }
         // 8xy7
+        pub fn subn(&mut self, v_x: usize, v_y: usize) {
+            let carry = match self.v[v_y] > self.v[v_x] {
+                false => 0,
+                true => 1
+            };
+            self.v[0xF] = carry;
+            self.v[v_x] -= self.v[v_y];
+        }
         // 8xyE
+        pub fn shl(&mut self, v_x: usize) {
+            let x = self.v[v_x];
+            self.v[0xF] = x >> 7; // msb overflow
+            self.v[v_x] << 1;
+        }
         // 9xy0
-        // TODO 
+        pub fn sne_v(&mut self, v_x: usize, v_y: usize) {
+                if (self.v[v_x] != self.v[v_y]) {
+                        self.pc += 2;
+                }
+        }
 
         // Annn
         pub fn load_i(&mut self, nnn: u16) {
@@ -193,8 +231,6 @@ impl Chip8 {
                 // return true if xor erases
                 return false
         }
-
-        pub fn clear_screen(&mut self) {}
 
 
 
