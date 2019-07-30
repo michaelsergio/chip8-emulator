@@ -3,7 +3,6 @@ use crate::chip8::BLOCK;
 use crate::chip8::DISPLAY;
 use crate::chip8::COLS;
 use crate::chip8::ROWS;
-use crate::chip8::FONT_DATA;
 use crate::chip8::FONT_SPRITES;
 use crate::chip8::MEMORY_SIZE;
 use crate::chip8::Chip8;

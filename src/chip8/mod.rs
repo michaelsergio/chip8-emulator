@@ -80,7 +80,7 @@ impl Chip8 {
             let mut i = 0;
             for font in &FONT_SPRITES {
                 for font_byte in &*font {
-                    chip8.memory[FONT_DATA + i] = *font_byte;
+                    self.memory[FONT_DATA + i] = *font_byte;
                     i += 1;
                 }
             }
