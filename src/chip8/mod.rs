@@ -75,9 +75,21 @@ impl Chip8 {
                 self.pc += 2;
                 return (b0, b1);
         }
+
+        pub fn load_fonts(&mut self) {
+            let mut i = 0;
+            for font in &FONT_SPRITES {
+                for font_byte in &*font {
+                    chip8.memory[FONT_DATA + i] = *font_byte;
+                    i += 1;
+                }
+            }
+        }
+
         // 00E0
         pub fn clear_screen(&mut self) {
-            // TODO cls
+        // TODO cls
+
         }
 
         // 00EE
