@@ -76,8 +76,9 @@ impl Chip8 {
                 return (b0, b1);
         }
         // 00E0
-        // TODO cls
-        pub fn clear_screen(&mut self) {}
+        pub fn clear_screen(&mut self) {
+            // TODO cls
+        }
 
         // 00EE
         pub fn ret(&mut self) {
@@ -267,7 +268,14 @@ impl Chip8 {
             self.i += self.v[v_x] as u16;
         }
         // Fx29
-        // TODO 
+        pub fn load_font(&mut self, v_x: usize) {
+            // TODO 
+            // Fx29 - LD F, Vx
+            // Set I = location of sprite for digit Vx.
+            // The value of I is set to the location for the hexadecimal sprite 
+            // corresponding to the value of Vx. 
+            // See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
+        }
 
         // Fx33
         pub fn load_bcd(&mut self, v_x: usize) {
