@@ -38,13 +38,7 @@ fn main() {
     // Carry flag VF is set to 1 if pixels are flipped when sprite drawn or else 0
 
     // load fonts
-    let mut i:usize = 0;
-    for font in &FONT_SPRITES {
-        for font_byte in &*font {
-            chip8.memory[FONT_DATA + i] = *font_byte;
-            i += 1;
-        }
-    }
+    load_fonts(&chip8)
 
 /*
     dump_fonts();
@@ -81,6 +75,16 @@ fn main() {
     let iterations = 12;
     for _ in 0..iterations {
         run_with_debug(&mut chip8);
+    }
+}
+
+fn load_fonts(chip8: &mut Chip8) {
+    let mut i = 0;
+    for font in &FONT_SPRITES {
+        for font_byte in &*font {
+            chip8.memory[FONT_DATA + i] = *font_byte;
+            i += 1;
+        }
     }
 }
 
