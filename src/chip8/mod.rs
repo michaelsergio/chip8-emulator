@@ -226,13 +226,19 @@ impl Chip8 {
                 self.display_render();
         }
 
+        fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
+                return self.memory[row_start + offset];
+        }
+
+        fn screen_write(&mut self, row_start:usize, offset: usize, value: u8) {
+                self.memory[row_start + offset] = value;
+        }
+
         fn set_screen(&mut self, x: usize, y: usize, read: &[u8]) -> u8 {
                 // Convert X Y to DISPLAY index
                 let row_start = DISPLAY + (y * ROW_LEN);
 
-                let row = &self.memory[row_start];
-
-                let modified = 0;
+                let mut modified = 0;
 
                 for read_y in 0..read.len() {
                         let read_i = read_y % ROWS;
@@ -244,16 +250,18 @@ impl Chip8 {
                         let first = sec as usize;
                         let second = ((sec + 1) % 8) as usize;
 
-                        let origA = row[first];
-                        let origB = row[second];
+                        let orig_a = self.screen_read(row_start, first);
+                        let orig_b = self.screen_read(row_start, second);
+                        // let origA = row[first];
+                        // let origB = row[second];
 
-                        let writeA = write >> offset;
-                        let writeB = write << (8 - offset);
+                        let write_a = write >> offset;
+                        let write_b = write << (8 - offset);
 
-                        row[first] = row[first] ^ writeA;
-                        row[second] = row[second] ^ writeB;
+                        self.screen_write(row_start, first, orig_a ^ write_a);
+                        self.screen_write(row_start, second, orig_b ^ write_b);
 
-                        modified |= (origA & writeA) | (origB & writeB);
+                        modified |= (orig_b & write_a) | (orig_b & write_b);
                 }
                 // display at (x,y) on screen.
                 // xor the bytes onto the screen
