@@ -13,7 +13,6 @@ use std::fs;
 mod chip8;
 
 fn main() {
-
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
     let mut chip8 = Chip8 { 
@@ -24,9 +23,8 @@ fn main() {
         timer_sound: 0,
         pc: 0,
         sp: 0,
-        i: 0
+        i: 0,
     };
-
     
     // Input - hex keyboard: 16 keys 0-F.
     // 1 2 3 C
@@ -70,14 +68,14 @@ fn main() {
     let bytes = fs::read(path).unwrap();
 
     println!("Loading {} into memory", path);
-    let start = DATA;
+    let start = chip8::DATA;
     for i in 0..bytes.len() {
         chip8.memory[start + i] = bytes[i];
     }
 
     chip8.pc = 0x200;
-    debug_registers(&chip8);
-    let iterations = 12;
+    // debug_registers(&chip8);
+    let iterations: u32 = env::var("iter").unwrap_or("10".to_string()).parse().unwrap_or(10);
     for _ in 0..iterations {
         run_with_debug(&mut chip8);
     }
@@ -88,30 +86,22 @@ fn run_with_debug(chip8: &mut Chip8) {
     
     // decode / execute
     chip8.decode_execute(b0, b1);
-    debug_registers(&chip8);
+    // debug_registers(&chip8);
 }
 
 fn debug_registers(chip8: &Chip8) {
+    console_debug_registers(chip8)
+}
+
+fn console_debug_registers(chip8: &Chip8) {
     println!("PC    SP    I");
     println!("{:#X} {:#X} {:#X}", chip8.pc, chip8.sp, chip8.i);
     println!("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf");
     println!("{:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}", 
-             chip8.v[0],
-             chip8.v[1],
-             chip8.v[2],
-             chip8.v[3],
-             chip8.v[4],
-             chip8.v[5],
-             chip8.v[6],
-             chip8.v[7],
-             chip8.v[8],
-             chip8.v[9],
-             chip8.v[10],
-             chip8.v[11],
-             chip8.v[12],
-             chip8.v[13],
-             chip8.v[14],
-             chip8.v[15]);
+             chip8.v[0], chip8.v[1], chip8.v[2], chip8.v[3],
+             chip8.v[4], chip8.v[5], chip8.v[6], chip8.v[7],
+             chip8.v[8], chip8.v[9], chip8.v[10], chip8.v[11],
+             chip8.v[12], chip8.v[13], chip8.v[14], chip8.v[15]);
 }
 
 fn debug_font(font: Font) {
@@ -124,7 +114,6 @@ fn debug_font(font: Font) {
         print!("\n");
     }
 }
-
 
 fn debug_screen(chip8: &Chip8) {
     for y in 0..32 {
@@ -141,6 +130,7 @@ fn debug_screen(chip8: &Chip8) {
     }
 }
 
+/*
 fn draw(chip8: &Chip8) {
     for y in 0..ROWS - 1 {
         for x in 0..COLS - 1 {
@@ -152,6 +142,7 @@ fn draw(chip8: &Chip8) {
         print!("\n");
     }
 }
+*/
 
 fn dump_fonts() {
     for i in 0..16 {
