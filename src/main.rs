@@ -3,6 +3,7 @@ use crate::chip8::BLOCK;
 use crate::chip8::DISPLAY;
 use crate::chip8::COLS;
 use crate::chip8::ROWS;
+use crate::chip8::ROW_LEN;
 use crate::chip8::FONT_SPRITES;
 use crate::chip8::MEMORY_SIZE;
 use crate::chip8::ECHO_SOUND;
@@ -76,6 +77,7 @@ fn bios_check() {
         pc: 0,
         sp: 0,
         i: 0,
+        should_draw: false,
     };
     chip8.load(2, 250);
     chip8.load(3, 20);
@@ -85,9 +87,9 @@ fn bios_check() {
     println!("{}", chip8.v[2]);
     println!("{}", chip8.v[0xF]);
     println!("{}", ECHO_SOUND);
-    chip8.display_render();
+    display_render(&chip8, true);
     chip8.fill_screen();
-    chip8.display_render();
+    display_render(&chip8, true);
    //debug_screen(&chip8);
     // bios_draw(&chip8);
 }
@@ -104,6 +106,7 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
         pc: 0,
         sp: 0,
         i: 0,
+        should_draw: false,
     };
     
     // Input - hex keyboard: 16 keys 0-F.
@@ -146,6 +149,10 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
         let (b0, b1) = chip8.fetch();
         chip8.decode_execute(b0, b1);
         if debug_registers { console_debug_registers(&chip8); }
+        if chip8.should_draw {
+            display_render(&chip8, debug_registers);
+            chip8.should_draw = false;
+        }
     }
 }
 
@@ -207,4 +214,29 @@ fn dump_fonts() {
         debug_font(f);
         println!("");
     }
+}
+
+fn display_render(chip8: &Chip8, debug: bool) {
+    // 32 rows x 64 cols
+    // aka. 32 rows with 8 sections of 8 bits (1 byte each)
+    //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
+    //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
+    // ... 30 more times
+
+    for row_i in 0..ROWS {
+        if debug { print!("{:02}:", row_i); }
+        let row_start = DISPLAY + (row_i * ROW_LEN);
+        // print row
+        for i in 0..ROW_LEN {
+                let mut section: u8 = chip8.memory[row_start + i];
+                for _ in 0..8 {
+                        let bit = section & 0x1;
+                        let draw = if bit == 0 { ' ' } else { BLOCK };
+                        print!("{}", draw);
+                        section >>= 1;
+                }
+        }
+        println!("");
+    }
+    //if debug { println!("________________________________"); }
 }

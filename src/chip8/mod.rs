@@ -58,6 +58,8 @@ pub struct Chip8 {
         pub pc: u16,
         pub sp: u8,
         pub i: u16,
+
+        pub should_draw: bool, // Custom regster to know if drw has been invoked.
 }
 
 impl Chip8 {
@@ -282,7 +284,7 @@ impl Chip8 {
                         true => 1,
                         false => 0,
                 };
-                self.display_render();
+                self.should_draw = true;
         }
 
         fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
@@ -330,32 +332,6 @@ impl Chip8 {
                 // be sure to wrap around display.
                 // return true if xor erases
                 return collision;
-        }
-
-
-        pub fn display_render(&self) {
-                // 32 rows x 64 cols
-                // aka. 32 rows with 8 sections of 8 bits (1 byte each)
-                //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
-                //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
-                // ... 30 more times
-
-                for row_i in 0..ROWS {
-                        print!("{:02}:", row_i);
-                        let row_start = DISPLAY + (row_i * ROW_LEN);
-                        // print row
-                        for i in 0..ROW_LEN {
-                                let mut section: u8 = self.memory[row_start + i];
-                                for _ in 0..8 {
-                                        let bit = section & 0x1;
-                                        let draw = if bit == 0 { ' ' } else { BLOCK };
-                                        print!("{}", draw);
-                                        section >>= 1;
-                                }
-                        }
-                        println!("");
-                }
-                println!("________________________________");
         }
 
         // Ex9E
