@@ -99,6 +99,7 @@ fn bios_check(glyph: char) {
     display_render(&chip8, true, glyph);
     chip8.fill_screen();
     display_render(&chip8, true, glyph);
+    chip8.clear_screen();
    //debug_screen(&chip8);
     // bios_draw(&chip8);
 }
