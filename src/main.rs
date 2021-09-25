@@ -8,22 +8,51 @@ use crate::chip8::MEMORY_SIZE;
 use crate::chip8::Chip8;
 use std::env;
 use std::fs;
+use std::path::PathBuf;
+use std::path::Path;
+use structopt::StructOpt;
 
+#[derive(StructOpt, Debug)]
+#[structopt(name = "chip8-emulator")]
+struct Opt {
+
+    /// Set speed
+    // we don't want to name it "speed", need to look smart
+    #[structopt(short = "f", long = "font-check")]
+    font_check: bool,
+
+    #[structopt(short = "n", long = "iterations", default_value="10")]
+    iterations: u32,
+
+    /// Files to process
+    #[structopt(name = "FILE", parse(from_os_str))]
+    file: PathBuf,
+}
 
 mod chip8;
 
 fn main() {
+    let opt: Opt = Opt::from_args();
+    println!("{:#?}", opt);
+
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage: disasm ???? file");
         return
     }
+
+    if opt.font_check {
+        dump_fonts();
+        return;
+    }
+
     let path = &args[1];
     let iterations: u32 = env::var("iter").unwrap_or("10".to_string()).parse().unwrap_or(10);
-    run_emulator(path, iterations);
+    //opt.iterations
+    run_emulator(opt.file.as_path(), iterations);
 }
 
-fn run_emulator(path: &String, iterations: u32) {
+fn run_emulator(path: &Path, iterations: u32) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
     let mut chip8 = Chip8 { 
@@ -70,11 +99,11 @@ fn run_emulator(path: &String, iterations: u32) {
     //draw(&chip8);
     */
 
-    println!("Loading {} into memory", path);
+    println!("Loading {} into memory", path.to_str().unwrap_or("BAD_PATH"));
     let bytes = match fs::read(path) {
         Ok(x) => x,
         Err(_e) => {
-            println!("Could not read file from path: {}", path);
+            println!("Could not read file from path: {}", path.to_str().unwrap_or("BAD_PATH"));
             return
         }
     };
