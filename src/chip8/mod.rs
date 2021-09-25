@@ -239,8 +239,6 @@ impl Chip8 {
         }
 
         //Dxyn
-        // Tried to rewrite
-        // TODO test indivdual functions and replace caller
         pub fn draw(&mut self, v_x: usize, v_y:usize, n: usize) {
                 // draw at coord (vx, vy) a sprite from (I) that is 8 pixels (bits) wide and N pixels high.
                 // We must keep track of collisions.
@@ -280,24 +278,6 @@ impl Chip8 {
                 };
                 self.display_render();
         }
-
-        //Dxyn
-        /*
-        pub fn draw(&mut self, v_x: usize, v_y:usize, n: usize) {
-                // read n bytes from memory I
-                // nibble is max 16 bytes of data to read 
-                let mut read: [u8; 16] = [0; 16];
-                for i in 0..n {
-                        read[i as usize] = self.memory[(self.i + (i as u16)) as usize];
-                }
-                // Set Vf to the is_collision output of set_screen
-                self.v[0xF] = self.set_screen(v_x, v_y, &read, n);
-                // let is_erased = self.set_screen(self.v[v_x], self.v[v_y], &read[0..n]);
-                // if is_erased { self.v[0xF] = 1; }
-                // else { self.v[0xF] = 0; }
-                self.display_render();
-        }
-        */
 
         fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
                 return self.memory[row_start + offset];
@@ -368,6 +348,7 @@ impl Chip8 {
                         }
                         println!("");
                 }
+                println!("________________________________");
         }
 
         // Ex9E

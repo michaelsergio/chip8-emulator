@@ -16,10 +16,11 @@ use structopt::StructOpt;
 #[structopt(name = "chip8-emulator")]
 struct Opt {
 
-    /// Set speed
-    // we don't want to name it "speed", need to look smart
     #[structopt(short = "f", long = "font-check")]
     font_check: bool,
+
+    #[structopt(short, long)]
+    registers: bool,
 
     #[structopt(short = "n", long = "iterations", default_value="10")]
     iterations: u32,
@@ -33,7 +34,7 @@ mod chip8;
 
 fn main() {
     let opt: Opt = Opt::from_args();
-    println!("{:#?}", opt);
+    //println!("{:#?}", opt);
 
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -46,13 +47,10 @@ fn main() {
         return;
     }
 
-    let path = &args[1];
-    let iterations: u32 = env::var("iter").unwrap_or("10".to_string()).parse().unwrap_or(10);
-    //opt.iterations
-    run_emulator(opt.file.as_path(), iterations);
+    run_emulator(opt.file.as_path(), opt.iterations, opt.registers);
 }
 
-fn run_emulator(path: &Path, iterations: u32) {
+fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
     let mut chip8 = Chip8 { 
@@ -113,23 +111,14 @@ fn run_emulator(path: &Path, iterations: u32) {
     }
 
     chip8.pc = 0x200;
-    // debug_registers(&chip8);
+
+    if debug_registers { console_debug_registers(&chip8); }
+
     for _ in 0..iterations {
-        run_with_debug(&mut chip8);
+        let (b0, b1) = chip8.fetch();
+        chip8.decode_execute(b0, b1);
+        if debug_registers { console_debug_registers(&chip8); }
     }
-
-}
-
-fn run_with_debug(chip8: &mut Chip8) {
-    let (b0, b1) = chip8.fetch();
-    
-    // decode / execute
-    chip8.decode_execute(b0, b1);
-    // debug_registers(&chip8);
-}
-
-fn debug_registers(chip8: &Chip8) {
-    console_debug_registers(chip8)
 }
 
 fn console_debug_registers(chip8: &Chip8) {
