@@ -57,8 +57,11 @@ pub struct Chip8 {
         pub sp: u8,
         pub i: u16,
 
+        pub keyboard: u16,
         pub should_draw: bool, // Custom regster to know if drw has been invoked.
-        pub should_sound: bool, // Custom regster to know if drw has been invoked.
+        //pub should_sound: bool, // Custom regster to know if drw has been invoked.
+        pub wait_key: bool,
+        pub wait_key_v_x: usize,
 }
 
 impl Chip8 {
@@ -286,15 +289,19 @@ impl Chip8 {
                 self.should_draw = true;
         }
 
+        pub fn is_key_down(&self, value: u8) -> bool {
+                self.keyboard & (1 << value) != 0
+        }
+
         // Ex9E
         pub fn skip_if_key_pressed(&mut self, v_x: usize) {
-                if is_key_down(self.v[v_x]) { 
+                if self.is_key_down(self.v[v_x]) { 
                     self.pc += 2;
                 }
         }
         // ExA1
         pub fn skip_if_key_not_pressed(&mut self, v_x: usize) {
-                if !is_key_down(self.v[v_x]) { 
+                if !self.is_key_down(self.v[v_x]) { 
                     self.pc += 2;
                 }
         }
@@ -304,8 +311,22 @@ impl Chip8 {
         }
         // Fx0A
         pub fn load_key_press(&mut self, v_x: usize) {
-            self.v[v_x] = get_key();
+            // TODO This seems wrong
+            self.keyboard = 0;
+
+            // I need to wait for a key press, but what is a key is already down?
+            // I guess only I key can be pressed at a time.
+
+            self.wait_key = true;
+            self.wait_key_v_x = v_x;
+            //self.v[v_x] = get_key();
         }
+
+        // TODO: need to call from main code
+        pub fn respond_to_wait_key(&mut self, key: u8) {
+            self.v[self.wait_key_v_x] = key;
+        }
+
         // Fx15
         pub fn set_delay_timer(&mut self, v_x: usize) {
             self.timer_delay = self.v[v_x];
@@ -414,15 +435,6 @@ impl Chip8 {
 
 fn arg3(b0: u8, b1: u8) -> u16 {
         return (((b0 & 0x0F) as u16) << 8) | b1 as u16;
-}
-
-fn is_key_down(key: u8) -> bool {
-    // TODO
-    false
-}
-fn get_key() -> u8 {
-    // TODO
-    1
 }
 
 fn bit_value(byte: u8, bit_index_ltr: usize) -> bool {

@@ -86,7 +86,10 @@ fn bios_check(glyph: char) {
         pc: 0,
         sp: 0,
         i: 0,
+        keyboard: 0,
         should_draw: false,
+        wait_key: false,
+        wait_key_v_x: 0,
     };
 
     chip8.load(2, 250);
@@ -115,7 +118,10 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
         pc: 0,
         sp: 0,
         i: 0,
+        keyboard: 0,
         should_draw: false,
+        wait_key: false,
+        wait_key_v_x: 0,
     };
     
     // Input - hex keyboard: 16 keys 0-F.
@@ -156,6 +162,9 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
 
     for _ in 0..iterations {
         let (b0, b1) = chip8.fetch();
+        if debug_registers {
+            println!("fetch: {:X}  {:X}", b0, b1)
+        }
         chip8.decode_execute(b0, b1);
         if debug_registers { console_debug_registers(&chip8); }
         if chip8.should_draw {
@@ -169,12 +178,13 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
 fn console_debug_registers(chip8: &Chip8) {
     println!("PC    SP    I");
     println!("{:#X} {:#X} {:#X}", chip8.pc, chip8.sp, chip8.i);
-    println!("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf");
-    println!("{:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}", 
+    println!("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf dt st  k");
+    println!("{:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X} {:X} {:X} {:X}", 
              chip8.v[0], chip8.v[1], chip8.v[2], chip8.v[3],
              chip8.v[4], chip8.v[5], chip8.v[6], chip8.v[7],
              chip8.v[8], chip8.v[9], chip8.v[10], chip8.v[11],
-             chip8.v[12], chip8.v[13], chip8.v[14], chip8.v[15]);
+             chip8.v[12], chip8.v[13], chip8.v[14], chip8.v[15],
+            chip8.timer_delay, chip8.timer_sound, chip8.keyboard);
 }
 
 fn debug_font(font: Font, block: char) {
