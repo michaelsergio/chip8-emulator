@@ -238,5 +238,11 @@ fn display_render(chip8: &Chip8, debug: bool) {
         }
         println!("");
     }
-    //if debug { println!("________________________________"); }
+    if debug { 
+        print!("   "); // padding for 01:
+    }
+    for _i in 0..COLS {
+        print!("_");
+    }
+    print!("\n");
 }

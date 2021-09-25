@@ -287,6 +287,7 @@ impl Chip8 {
                 self.should_draw = true;
         }
 
+        /*
         fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
                 return self.memory[row_start + offset];
         }
@@ -333,6 +334,7 @@ impl Chip8 {
                 // return true if xor erases
                 return collision;
         }
+        */
 
         // Ex9E
         pub fn skip_if_key_pressed(&mut self, v_x: usize) {
