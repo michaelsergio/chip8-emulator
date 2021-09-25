@@ -88,6 +88,7 @@ fn bios_check(glyph: char) {
         i: 0,
         should_draw: false,
     };
+
     chip8.load(2, 250);
     chip8.load(3, 20);
     println!("{}", chip8.v[2]);
@@ -100,8 +101,6 @@ fn bios_check(glyph: char) {
     chip8.fill_screen();
     display_render(&chip8, true, glyph);
     chip8.clear_screen();
-   //debug_screen(&chip8);
-    // bios_draw(&chip8);
 }
 
 
@@ -162,6 +161,7 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
         if chip8.should_draw {
             display_render(&chip8, debug_registers, glyph);
             chip8.should_draw = false;
+            // TODO Need to implement timers for sounds and delays
         }
     }
 }

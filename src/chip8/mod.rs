@@ -58,6 +58,7 @@ pub struct Chip8 {
         pub i: u16,
 
         pub should_draw: bool, // Custom regster to know if drw has been invoked.
+        pub should_sound: bool, // Custom regster to know if drw has been invoked.
 }
 
 impl Chip8 {
@@ -284,55 +285,6 @@ impl Chip8 {
                 };
                 self.should_draw = true;
         }
-
-        /*
-        fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
-                return self.memory[row_start + offset];
-        }
-
-        fn screen_write(&mut self, row_start:usize, offset: usize, value: u8) {
-                self.memory[row_start + offset] = value;
-        }
-
-        fn set_screen(&mut self, x: usize, y: usize, read: &[u8], read_buff_len: usize) -> u8 {
-                // Convert X Y to DISPLAY index
-                let row_start = DISPLAY + (y * ROW_LEN);
-
-                let mut collision = 0;
-
-                println!("set screen called for len: {}", read_buff_len);
-                for read_y in 0..read_buff_len {
-                        println!("read {}", read_y);
-                        let read_i = read_y % ROWS;
-                        let to_write = read[read_i];
-
-                        let offset = x % 8;
-                        let sec = x / 8;
-                        let first = sec as usize;
-                        let second = ((sec + 1) % 8) as usize;
-
-                        // let origA = row[first];
-                        // let origB = row[second];
-
-                        println!("write {:#b}, offset {}, sec {}", to_write, offset, sec);
-                        let write_a = to_write >> offset;
-                        println!("write_a {}", write_a);
-                        let write_b = to_write << (8 - offset);
-
-                        let orig_a = self.screen_read(row_start, first);
-                        let orig_b = self.screen_read(row_start, second);
-                        self.screen_write(row_start, first, orig_a ^ write_a);
-                        self.screen_write(row_start, second, orig_b ^ write_b);
-
-                        collision |= (orig_b & write_a) | (orig_b & write_b);
-                }
-                // display at (x,y) on screen.
-                // xor the bytes onto the screen
-                // be sure to wrap around display.
-                // return true if xor erases
-                return collision;
-        }
-        */
 
         // Ex9E
         pub fn skip_if_key_pressed(&mut self, v_x: usize) {
