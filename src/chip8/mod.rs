@@ -8,8 +8,6 @@ pub const DATA: usize = 0x200;       // start at 512 0x200
 pub const DISPLAY: usize = 0xF00;    // upper 256 0xF00 - 0xFFF display refresh
 pub const CALLSTACK: usize = 0xEA0;  // 96 below that are call stack 0xEA0 - 0xEFF
 
-pub const BLOCK: char = '\u{2588}';
-
 pub const ROWS: usize = 32;
 pub const COLS: usize = 64;
 pub const ROW_LEN: usize = COLS / 8;

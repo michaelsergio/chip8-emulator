@@ -1,5 +1,4 @@
 use crate::chip8::Font;
-use crate::chip8::BLOCK;
 use crate::chip8::DISPLAY;
 use crate::chip8::COLS;
 use crate::chip8::ROWS;
@@ -14,6 +13,9 @@ use std::path::PathBuf;
 use std::path::Path;
 use structopt::StructOpt;
 
+const GLYPH_BLOCK: char = '\u{2588}';
+const GLYPH_X: char = 'x';
+
 #[derive(StructOpt, Debug)]
 #[structopt(name = "chip8-emulator")]
 struct Opt {
@@ -25,7 +27,7 @@ struct Opt {
     bios_check: bool,
 
     #[structopt(short = "x", long = "block")]
-    block: Option<String>,
+    override_glyph: Option<char>,
 
     #[structopt(short, long)]
     registers: bool,
@@ -44,29 +46,36 @@ fn main() {
     let opt: Opt = Opt::from_args();
     //println!("{:#?}", opt);
 
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: disasm ???? file");
-        return
-    }
+    let lang = env::var("LANG").unwrap_or("".to_string());
+    let glyph = determine_display_glyph(opt.override_glyph, lang); 
 
     if opt.font_check {
-        dump_fonts();
+        dump_fonts(glyph);
         return;
     }
-    // TODO: Pass custom glyph along
-    // Optional param
-    // Default to BLOCK if env LANG for UTF-8 is supported
+
     // Otherwise use 'x'
     if opt.bios_check {
-        bios_check();
+        bios_check(glyph);
         return;
     }
 
-    run_emulator(opt.file.as_path(), opt.iterations, opt.registers);
+    run_emulator(opt.file.as_path(), opt.iterations, opt.registers, glyph);
 }
 
-fn bios_check() {
+fn determine_display_glyph(override_glyph: Option<char>, lang: String) -> char {
+    if override_glyph.is_some() {
+        return override_glyph.unwrap();
+    }
+    // Return Defaults: Default to unicode BLOCK if env LANG for UTF-8 is supported
+    return match lang.to_lowercase().contains("utf-8") {
+        true => GLYPH_BLOCK,
+        false => GLYPH_X,
+    }
+} 
+
+
+fn bios_check(glyph: char) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
     let mut chip8 = Chip8 { 
         memory: memory,
@@ -87,15 +96,15 @@ fn bios_check() {
     println!("{}", chip8.v[2]);
     println!("{}", chip8.v[0xF]);
     println!("{}", ECHO_SOUND);
-    display_render(&chip8, true);
+    display_render(&chip8, true, glyph);
     chip8.fill_screen();
-    display_render(&chip8, true);
+    display_render(&chip8, true, glyph);
    //debug_screen(&chip8);
     // bios_draw(&chip8);
 }
 
 
-fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
+fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
     let mut chip8 = Chip8 { 
         memory: memory,
@@ -150,7 +159,7 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
         chip8.decode_execute(b0, b1);
         if debug_registers { console_debug_registers(&chip8); }
         if chip8.should_draw {
-            display_render(&chip8, debug_registers);
+            display_render(&chip8, debug_registers, glyph);
             chip8.should_draw = false;
         }
     }
@@ -167,11 +176,11 @@ fn console_debug_registers(chip8: &Chip8) {
              chip8.v[12], chip8.v[13], chip8.v[14], chip8.v[15]);
 }
 
-fn debug_font(font: Font) {
+fn debug_font(font: Font, block: char) {
     for part in &font {
         for i in 0..4 {
             let val = (part << i) & (0x80 as u8);
-            let glyph = if val != (0 as u8) { BLOCK } else { ' ' };
+            let glyph = if val != (0 as u8) { block } else { ' ' };
             print!("{}", glyph);
         }
         print!("\n");
@@ -208,15 +217,15 @@ fn bios_draw(chip8: &Chip8) {
 }
 */
 
-fn dump_fonts() {
+fn dump_fonts(glyph: char) {
     for i in 0..16 {
         let f = FONT_SPRITES[i];
-        debug_font(f);
+        debug_font(f, glyph);
         println!("");
     }
 }
 
-fn display_render(chip8: &Chip8, debug: bool) {
+fn display_render(chip8: &Chip8, debug: bool, glyph: char) {
     // 32 rows x 64 cols
     // aka. 32 rows with 8 sections of 8 bits (1 byte each)
     //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
@@ -231,7 +240,7 @@ fn display_render(chip8: &Chip8, debug: bool) {
                 let mut section: u8 = chip8.memory[row_start + i];
                 for _ in 0..8 {
                         let bit = section & 0x1;
-                        let draw = if bit == 0 { ' ' } else { BLOCK };
+                        let draw = if bit == 0 { ' ' } else { glyph };
                         print!("{}", draw);
                         section >>= 1;
                 }
