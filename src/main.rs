@@ -13,6 +13,17 @@ use std::fs;
 mod chip8;
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        println!("Usage: disasm ???? file");
+        return
+    }
+    let path = &args[1];
+    let iterations: u32 = env::var("iter").unwrap_or("10".to_string()).parse().unwrap_or(10);
+    run_emulator(path, iterations);
+}
+
+fn run_emulator(path: &String, iterations: u32) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
 
     let mut chip8 = Chip8 { 
@@ -43,6 +54,7 @@ fn main() {
     // load fonts
     chip8.load_fonts();
 
+    // fetch 
 /*
     dump_fonts();
     chip8.load(2, 250);
@@ -58,16 +70,14 @@ fn main() {
     //draw(&chip8);
     */
 
-    // fetch 
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        println!("Usage: disasm ???? file");
-        return
-    }
-    let path = &args[1];
-    let bytes = fs::read(path).unwrap();
-
     println!("Loading {} into memory", path);
+    let bytes = match fs::read(path) {
+        Ok(x) => x,
+        Err(_e) => {
+            println!("Could not read file from path: {}", path);
+            return
+        }
+    };
     let start = chip8::DATA;
     for i in 0..bytes.len() {
         chip8.memory[start + i] = bytes[i];
@@ -75,10 +85,10 @@ fn main() {
 
     chip8.pc = 0x200;
     // debug_registers(&chip8);
-    let iterations: u32 = env::var("iter").unwrap_or("10".to_string()).parse().unwrap_or(10);
     for _ in 0..iterations {
         run_with_debug(&mut chip8);
     }
+
 }
 
 fn run_with_debug(chip8: &mut Chip8) {

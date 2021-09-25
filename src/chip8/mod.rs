@@ -10,9 +10,13 @@ pub const CALLSTACK: usize = 0xEA0;  // 96 below that are call stack 0xEA0 - 0xE
 
 pub const BLOCK: char = '\u{2588}';
 
-pub const ROWS:usize = 32;
-pub const COLS:usize = 64;
+pub const ROWS: usize = 32;
+pub const COLS: usize = 64;
 pub const ROW_LEN: usize = COLS / 8;
+
+pub const ROW_SIZE_BYTE: usize = ROWS / 8;
+pub const COL_SIZE_BYTE: usize = COLS / 8;
+
 
 pub const ECHO_SOUND: char = 7 as char;
 
@@ -211,20 +215,89 @@ impl Chip8 {
                 let random = rand::random::<u8>();
                 self.v[v_x] = random & kk;
         }
+
+
+        
+        // X and Y must be inside the screen bounds.
+        fn screen_bit_write(&mut self, x: usize, y:usize, set: bool) -> bool {
+
+                // start with x
+                // which byte are we in?
+
+
+                let byte_offset = DISPLAY + (y * COL_SIZE_BYTE) + (x/8);
+                let byte_sector = self.memory[byte_offset];
+                let bit_offset = x % 8;
+                let old_bit = bit_value(byte_sector, bit_offset);
+                let new_value = old_bit ^ set;
+                let new_byte_sector = byte_with_replaced_bit(byte_sector, bit_offset, new_value);
+
+                self.memory[byte_offset] = new_byte_sector;
+
+                // Need to return if any bits erased (old set to unset)
+                return !old_bit & new_value;
+        }
+
         //Dxyn
+        // Tried to rewrite
+        // TODO test indivdual functions and replace caller
+        pub fn draw(&mut self, v_x: usize, v_y:usize, n: usize) {
+                // draw at coord (vx, vy) a sprite from (I) that is 8 pixels (bits) wide and N pixels high.
+                // We must keep track of collisions.
+                // We must wrap around outside x and y coordinates (i think)
+
+                let mut collision_flag = false;
+
+                // Read one byte up to n-times. This is the vertical position.
+                for y_i in 0..n {
+                        // read a byte of data from I location
+                        let byte_read = self.memory[(self.i as usize) + y_i];
+
+                        // Lets go bit by bit
+                        for bit_i in 0..8 {
+                                // get bit at position 
+                                let is_set = bit_value(byte_read, bit_i);
+
+                                // if its not set we can safely ignore xor-ing it
+                                // if it is set we must write the bit to memory
+
+                                if is_set {
+                                        // Need to adjust actual x/y position if outside bounds
+                                        let adj_x = (v_x + bit_i) % ROWS;
+                                        let adj_y = (v_y + y_i) % COLS;
+
+                                        // if any pixels are erased (1^1) = 0. we must set flag
+                                        // TODO: Need to figure out where to write the bit to
+                                        let collision = self.screen_bit_write(adj_x, adj_y, is_set);
+                                        collision_flag |= collision;
+                                }
+                        }
+                }
+
+                self.v[0xF] = match collision_flag {
+                        true => 1,
+                        false => 0,
+                };
+                self.display_render();
+        }
+
+        //Dxyn
+        /*
         pub fn draw(&mut self, v_x: usize, v_y:usize, n: usize) {
                 // read n bytes from memory I
-                // nibble is max 16 
+                // nibble is max 16 bytes of data to read 
                 let mut read: [u8; 16] = [0; 16];
                 for i in 0..n {
                         read[i as usize] = self.memory[(self.i + (i as u16)) as usize];
                 }
-                self.v[0xF] = self.set_screen(v_x, v_y, &read);
+                // Set Vf to the is_collision output of set_screen
+                self.v[0xF] = self.set_screen(v_x, v_y, &read, n);
                 // let is_erased = self.set_screen(self.v[v_x], self.v[v_y], &read[0..n]);
                 // if is_erased { self.v[0xF] = 1; }
                 // else { self.v[0xF] = 0; }
                 self.display_render();
         }
+        */
 
         fn screen_read(&mut self, row_start:usize, offset: usize) -> u8 {
                 return self.memory[row_start + offset];
@@ -234,40 +307,43 @@ impl Chip8 {
                 self.memory[row_start + offset] = value;
         }
 
-        fn set_screen(&mut self, x: usize, y: usize, read: &[u8]) -> u8 {
+        fn set_screen(&mut self, x: usize, y: usize, read: &[u8], read_buff_len: usize) -> u8 {
                 // Convert X Y to DISPLAY index
                 let row_start = DISPLAY + (y * ROW_LEN);
 
-                let mut modified = 0;
+                let mut collision = 0;
 
-                for read_y in 0..read.len() {
+                println!("set screen called for len: {}", read_buff_len);
+                for read_y in 0..read_buff_len {
+                        println!("read {}", read_y);
                         let read_i = read_y % ROWS;
+                        let to_write = read[read_i];
 
-                        let write = read[read_i];
                         let offset = x % 8;
                         let sec = x / 8;
-
                         let first = sec as usize;
                         let second = ((sec + 1) % 8) as usize;
 
-                        let orig_a = self.screen_read(row_start, first);
-                        let orig_b = self.screen_read(row_start, second);
                         // let origA = row[first];
                         // let origB = row[second];
 
-                        let write_a = write >> offset;
-                        let write_b = write << (8 - offset);
+                        println!("write {:#b}, offset {}, sec {}", to_write, offset, sec);
+                        let write_a = to_write >> offset;
+                        println!("write_a {}", write_a);
+                        let write_b = to_write << (8 - offset);
 
+                        let orig_a = self.screen_read(row_start, first);
+                        let orig_b = self.screen_read(row_start, second);
                         self.screen_write(row_start, first, orig_a ^ write_a);
                         self.screen_write(row_start, second, orig_b ^ write_b);
 
-                        modified |= (orig_b & write_a) | (orig_b & write_b);
+                        collision |= (orig_b & write_a) | (orig_b & write_b);
                 }
                 // display at (x,y) on screen.
                 // xor the bytes onto the screen
-                // be sure to wrap around dispay.
+                // be sure to wrap around display.
                 // return true if xor erases
-                return modified;
+                return collision;
         }
 
 
@@ -431,4 +507,49 @@ fn is_key_down(key: u8) -> bool {
 fn get_key() -> u8 {
     // TODO
     1
+}
+
+fn bit_value(byte: u8, bit_index_ltr: usize) -> bool {
+        // Shift it over up to 7 positions and mask the right most bit
+        return byte >> (7 - bit_index_ltr) & 0x01 == 1;
+}
+
+fn byte_with_replaced_bit(byte: u8, bit_offset_ltr: usize, set: bool) -> u8 {
+        let offset_x = 7 - bit_offset_ltr;
+        match set {
+                true => byte | (1 << offset_x),
+                false => byte & (!(1 << offset_x)),
+        }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bit_value_test() {
+        let five: u8 = 5;
+        assert_eq!(false, bit_value(five, 0));
+        assert_eq!(false, bit_value(five, 1));
+        assert_eq!(false, bit_value(five, 2));
+        assert_eq!(false, bit_value(five, 3));
+        assert_eq!(false, bit_value(five, 4));
+        assert_eq!(true , bit_value(five, 5));
+        assert_eq!(false, bit_value(five, 6));
+        assert_eq!(true , bit_value(five, 7));
+    }
+
+    #[test]
+    fn byte_with_replaced_bit_set_test() {
+        let five: u8 = 5;
+        let seven: u8 = byte_with_replaced_bit(five, 6, true);
+        assert_eq!(7, seven);
+    }
+
+    #[test]
+    fn byte_with_replaced_bit_unset_test() {
+        let seven: u8 = 7;
+        let five: u8 = byte_with_replaced_bit(seven, 6, false);
+        assert_eq!(5, five);
+    }
 }
