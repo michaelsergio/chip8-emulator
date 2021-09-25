@@ -5,6 +5,7 @@ use crate::chip8::COLS;
 use crate::chip8::ROWS;
 use crate::chip8::FONT_SPRITES;
 use crate::chip8::MEMORY_SIZE;
+use crate::chip8::ECHO_SOUND;
 use crate::chip8::Chip8;
 use std::env;
 use std::fs;
@@ -18,6 +19,12 @@ struct Opt {
 
     #[structopt(short = "f", long = "font-check")]
     font_check: bool,
+
+    #[structopt(short = "b", long = "bios-check")]
+    bios_check: bool,
+
+    #[structopt(short = "x", long = "block")]
+    block: Option<String>,
 
     #[structopt(short, long)]
     registers: bool,
@@ -46,13 +53,48 @@ fn main() {
         dump_fonts();
         return;
     }
+    // TODO: Pass custom glyph along
+    // Optional param
+    // Default to BLOCK if env LANG for UTF-8 is supported
+    // Otherwise use 'x'
+    if opt.bios_check {
+        bios_check();
+        return;
+    }
 
     run_emulator(opt.file.as_path(), opt.iterations, opt.registers);
 }
 
+fn bios_check() {
+    let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
+    let mut chip8 = Chip8 { 
+        memory: memory,
+        v: [0; 16],
+        address: 0,
+        timer_delay: 0,
+        timer_sound: 0,
+        pc: 0,
+        sp: 0,
+        i: 0,
+    };
+    chip8.load(2, 250);
+    chip8.load(3, 20);
+    println!("{}", chip8.v[2]);
+    println!("{}", chip8.v[3]);
+    chip8.add_with_carry(2, 3);
+    println!("{}", chip8.v[2]);
+    println!("{}", chip8.v[0xF]);
+    println!("{}", ECHO_SOUND);
+    chip8.display_render();
+    chip8.fill_screen();
+    chip8.display_render();
+   //debug_screen(&chip8);
+    // bios_draw(&chip8);
+}
+
+
 fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
-
     let mut chip8 = Chip8 { 
         memory: memory,
         v: [0; 16],
@@ -82,20 +124,6 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool) {
     chip8.load_fonts();
 
     // fetch 
-/*
-    dump_fonts();
-    chip8.load(2, 250);
-    chip8.load(3, 20);
-    println!("{}", chip8.v[2]);
-    println!("{}", chip8.v[3]);
-    chip8.add_with_carry(2, 3);
-    println!("{}", chip8.v[2]);
-    println!("{}", chip8.v[0xF]);
-    //println!("{}", ECHO_SOUND);
-    //debug_screen(&chip8);
-
-    //draw(&chip8);
-    */
 
     println!("Loading {} into memory", path.to_str().unwrap_or("BAD_PATH"));
     let bytes = match fs::read(path) {
@@ -143,10 +171,12 @@ fn debug_font(font: Font) {
     }
 }
 
+/*
 fn debug_screen(chip8: &Chip8) {
     for y in 0..32 {
         for x in 0..16 {
             let i = y * 32 + x;
+            println!("\n{}, {}, {}", i, x, y);
             let val = chip8.memory[DISPLAY + i];
             for z in 0..4 {
                 //let glyph = if z == 0 { BLOCK } else { ' ' };
@@ -158,8 +188,7 @@ fn debug_screen(chip8: &Chip8) {
     }
 }
 
-/*
-fn draw(chip8: &Chip8) {
+fn bios_draw(chip8: &Chip8) {
     for y in 0..ROWS - 1 {
         for x in 0..COLS - 1 {
             let i = y * ROWS + x;

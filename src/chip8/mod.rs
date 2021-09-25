@@ -86,6 +86,12 @@ impl Chip8 {
                         self.memory[DISPLAY + i] = 0
                 }
         }
+        // Not an instruction but for debugging
+        pub fn fill_screen(&mut self) {
+                for i in 0..(COLS * ROWS / 8) {
+                        self.memory[DISPLAY + i] = 0xFF
+                }
+        }
 
         // 00EE
         pub fn ret(&mut self) {
@@ -327,7 +333,7 @@ impl Chip8 {
         }
 
 
-        fn display_render(&self) {
+        pub fn display_render(&self) {
                 // 32 rows x 64 cols
                 // aka. 32 rows with 8 sections of 8 bits (1 byte each)
                 //abcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGHabcdefghABCDEFGH
@@ -335,6 +341,7 @@ impl Chip8 {
                 // ... 30 more times
 
                 for row_i in 0..ROWS {
+                        print!("{:02}:", row_i);
                         let row_start = DISPLAY + (row_i * ROW_LEN);
                         // print row
                         for i in 0..ROW_LEN {
