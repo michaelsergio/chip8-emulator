@@ -120,14 +120,18 @@ fn display_text(chip8: &mut Chip8, glyph: char) {
     chip8.clear_screen();
 
     // draw to (0,0) a "1"
-    draw_font_to_buffer(chip8, 0, 6, 0);
-    //display_render(&chip8, true, glyph);
-
-    // draw_font_to_buffer(chip8, 8, 0, 3);
+    draw_font_to_buffer(chip8, 0, 0, 1);
     display_render(&chip8, true, glyph);
 
-    //draw_font_to_buffer(chip8, 0, 5, 3);
-    //display_render(&chip8, true, glyph);
+    draw_font_to_buffer(chip8, 8, 0, 3);
+    display_render(&chip8, true, glyph);
+
+    draw_font_to_buffer(chip8, 0, 6, 5);
+    display_render(&chip8, true, glyph);
+
+    draw_font_to_buffer(chip8, 62, 12, 7);
+    display_render(&chip8, true, glyph);
+
 
     // mem_dump(chip8);
 
@@ -300,14 +304,14 @@ fn display_render(chip8: &Chip8, debug: bool, glyph: char) {
     for row_i in 0..ROWS {
         if debug { print!("{:02}:", row_i); }
         let row_start = DISPLAY + (row_i * ROW_LEN);
-        // print row
-        for i in 0..ROW_LEN {
-                let mut section: u8 = chip8.memory[row_start + i];
-                for _ in 0..8 {
-                        let bit = section & 0x1;
+        // print each col for row
+        for i in 0..(COLS / 8) {
+                let byte: u8 = chip8.memory[row_start + i];
+                for b in 0..8 {
+                        let bit = byte & (0x1 << 7 - b);
                         let draw = if bit == 0 { ' ' } else { glyph };
                         print!("{}", draw);
-                        section >>= 1;
+                        // section >>= 1;
                 }
         }
         println!("");
