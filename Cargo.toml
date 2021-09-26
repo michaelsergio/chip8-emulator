@@ -7,4 +7,5 @@ edition = "2018"
 [dependencies]
 rand = "0.7.0"
 structopt = "0.3.17"
+c8_disasm_lib = { path = "../chip8-disassembler/c8_disasm_lib" }
 

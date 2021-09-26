@@ -12,6 +12,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::path::Path;
 use structopt::StructOpt;
+use c8_disasm_lib::decode;
 
 const GLYPH_BLOCK: char = '\u{2588}';
 const GLYPH_X: char = 'x';
@@ -163,7 +164,10 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
     for _ in 0..iterations {
         let (b0, b1) = chip8.fetch();
         if debug_registers {
-            println!("fetch: {:X}  {:X}", b0, b1)
+            println!("\nfetch: {:02X}  {:02X}", b0, b1)
+        }
+        if debug_registers {
+            decode_print_byte(b0, b1, true);
         }
         chip8.decode_execute(b0, b1);
         if debug_registers { console_debug_registers(&chip8); }
@@ -172,6 +176,19 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
             chip8.should_draw = false;
             // TODO Need to implement timers for sounds and delays
         }
+    }
+}
+
+// taken from the c8_diasm_lib project - main code
+fn decode_print_byte(b0: u8, b1: u8, should_show_ascii: bool) {
+    let opcode = decode(b0, b1);
+
+    let b0_printable = b0 == b' ' || b0.is_ascii_alphanumeric();
+    let b1_printable = b1 == b' ' || b1.is_ascii_alphanumeric();
+    if should_show_ascii && b0_printable && b1_printable {
+        println!("{} \"{}{}\"", opcode, b0 as char, b1 as char);
+    } else {
+        println!("{}", opcode);
     }
 }
 
