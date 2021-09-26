@@ -18,7 +18,8 @@ pub const COL_SIZE_BYTE: usize = COLS / 8;
 
 pub const ECHO_SOUND: char = 7 as char;
 
-pub type Font = [u8; 5];
+const FONT_SIZE: usize = 5;
+pub type Font = [u8; FONT_SIZE];
 
 pub const FONT_SPRITES: [Font; 16] = [
     [0xF0, 0x90, 0x90, 0x90, 0xF0],
@@ -94,6 +95,21 @@ impl Chip8 {
         pub fn fill_screen(&mut self) {
                 for i in 0..(COLS * ROWS / 8) {
                         self.memory[DISPLAY + i] = 0xFF
+                }
+        }
+        pub fn fill_screen_other_row(&mut self) {
+                for y in 0..ROWS {
+                        if y % 2 == 1 {continue} ;
+                        for x in 0..COL_SIZE_BYTE {
+                                self.memory[DISPLAY + (y * COL_SIZE_BYTE) + x] = 0xFF
+                        }
+                }
+        }
+        pub fn fill_screen_other_col(&mut self) {
+                for y in 0..ROWS {
+                        for x in 0..COL_SIZE_BYTE {
+                                self.memory[DISPLAY + (y * COL_SIZE_BYTE) + x] = 0xAA
+                        }
                 }
         }
 
@@ -230,11 +246,6 @@ impl Chip8 {
         
         // X and Y must be inside the screen bounds.
         fn screen_bit_write(&mut self, x: usize, y:usize, set: bool) -> bool {
-
-                // start with x
-                // which byte are we in?
-
-
                 let byte_offset = DISPLAY + (y * COL_SIZE_BYTE) + (x/8);
                 let byte_sector = self.memory[byte_offset];
                 let bit_offset = x % 8;
@@ -254,6 +265,9 @@ impl Chip8 {
                 // We must keep track of collisions.
                 // We must wrap around outside x and y coordinates (i think)
 
+                let x = self.v[v_x] as usize;
+                let y = self.v[v_y] as usize;
+
                 let mut collision_flag = false;
 
                 // Read one byte up to n-times. This is the vertical position.
@@ -271,8 +285,8 @@ impl Chip8 {
 
                                 if is_set {
                                         // Need to adjust actual x/y position if outside bounds
-                                        let adj_x = (v_x + bit_i) % ROWS;
-                                        let adj_y = (v_y + y_i) % COLS;
+                                        let adj_x = (x + bit_i) % COLS;
+                                        let adj_y = (y + y_i) % ROWS;
 
                                         // if any pixels are erased (1^1) = 0. we must set flag
                                         // TODO: Need to figure out where to write the bit to
@@ -341,12 +355,10 @@ impl Chip8 {
         }
         // Fx29
         pub fn load_font(&mut self, v_x: usize) {
-            // TODO 
             // Fx29 - LD F, Vx
             // Set I = location of sprite for digit Vx.
-            // The value of I is set to the location for the hexadecimal sprite 
-            // corresponding to the value of Vx. 
-            // See section 2.4, Display, for more information on the Chip-8 hexadecimal font.
+                let val = self.v[v_x];
+                self.i = (FONT_DATA + (val as usize * FONT_SIZE)) as u16;
         }
         // Fx33
         pub fn load_bcd(&mut self, v_x: usize) {
@@ -480,4 +492,15 @@ mod tests {
         let five: u8 = byte_with_replaced_bit(seven, 6, false);
         assert_eq!(5, five);
     }
+
+    /*
+    #[test]
+    fn byte_with_replaced_bit_two_nibbles() {
+        let before: u8 = 0x35;
+        let after: u8 = 0x47;
+        let test: u8 = byte_with_replaced_bit(before, 6, true);
+        // TODO this is a bit more complex
+        assert_eq!(after, test);
+    }
+    */
 }

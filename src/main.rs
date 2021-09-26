@@ -92,6 +92,7 @@ fn bios_check(glyph: char) {
         wait_key: false,
         wait_key_v_x: 0,
     };
+    chip8.load_fonts();
 
     chip8.load(2, 250);
     chip8.load(3, 20);
@@ -105,6 +106,42 @@ fn bios_check(glyph: char) {
     chip8.fill_screen();
     display_render(&chip8, true, glyph);
     chip8.clear_screen();
+    chip8.fill_screen_other_row();
+    display_render(&chip8, true, glyph);
+    chip8.clear_screen();
+    chip8.fill_screen_other_col();
+    display_render(&chip8, true, glyph);
+    chip8.clear_screen();
+
+    display_text(&mut chip8, glyph);
+}
+
+fn display_text(chip8: &mut Chip8, glyph: char) {
+    chip8.clear_screen();
+
+    // draw to (0,0) a "1"
+    draw_font_to_buffer(chip8, 0, 6, 0);
+    //display_render(&chip8, true, glyph);
+
+    // draw_font_to_buffer(chip8, 8, 0, 3);
+    display_render(&chip8, true, glyph);
+
+    //draw_font_to_buffer(chip8, 0, 5, 3);
+    //display_render(&chip8, true, glyph);
+
+    // mem_dump(chip8);
+
+    chip8.clear_screen();
+}
+
+fn draw_font_to_buffer(chip8: &mut Chip8, x:u8, y:u8, val:u8) {
+    // Put at 0,0
+    chip8.v[0] = x;
+    chip8.v[1] = y;
+    // Draw "0"
+    chip8.v[2] = val;
+    chip8.load_font(2);
+    chip8.draw(0, 1, 5);
 }
 
 
@@ -282,4 +319,13 @@ fn display_render(chip8: &Chip8, debug: bool, glyph: char) {
         print!("_");
     }
     print!("\n");
+}
+
+
+fn mem_dump(chip8: &Chip8) {
+    for i in 0..MEMORY_SIZE {
+        if i % 32 == 0 { print!("\n") }
+        else if i % 4 == 0 { print!(" ") }
+        print!("{:02X}", chip8.memory[i])
+    }
 }
