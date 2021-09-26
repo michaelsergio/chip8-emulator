@@ -8,4 +8,6 @@ edition = "2018"
 rand = "0.7.0"
 structopt = "0.3.17"
 c8_disasm_lib = { path = "../chip8-disassembler/c8_disasm_lib" }
+cursive = "0.16"
+
 

@@ -40,6 +40,7 @@ pub const FONT_SPRITES: [Font; 16] = [
     [0xF0, 0x80, 0xF0, 0x80, 0x80]
 ];
 
+#[derive(Clone, Copy)] 
 pub struct Chip8 {
         pub memory: [u8; MEMORY_SIZE],
 
