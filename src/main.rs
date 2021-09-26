@@ -36,6 +36,10 @@ struct Opt {
     #[structopt(short, long)]
     gui_mode: bool,
 
+    #[structopt(short, long)]
+    autorun: bool,
+
+
     #[structopt(short = "x", long = "block")]
     override_glyph: Option<char>,
 
@@ -71,7 +75,7 @@ fn main() {
     }
 
     if opt.gui_mode {
-        run_gui_emulator(opt.file.as_path(), false, glyph);
+        run_gui_emulator(opt.file.as_path(), false, glyph, opt.autorun);
     } else {
         run_emulator(opt.file.as_path(), opt.iterations, opt.registers, glyph);
     }
@@ -249,8 +253,8 @@ fn decode_print_byte(b0: u8, b1: u8, should_show_ascii: bool) {
 fn console_debug_registers(chip8: &Chip8) {
     println!("PC    SP    I");
     println!("{:#X} {:#X} {:#X}", chip8.pc, chip8.sp, chip8.i);
-    println!("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf dt st  k");
-    println!("{:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X} {:X} {:X} {:X}", 
+    println!("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf dt st  k\n");
+    println!("{:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X}",
              chip8.v[0], chip8.v[1], chip8.v[2], chip8.v[3],
              chip8.v[4], chip8.v[5], chip8.v[6], chip8.v[7],
              chip8.v[8], chip8.v[9], chip8.v[10], chip8.v[11],
@@ -354,7 +358,7 @@ fn setup_gui(siv: &mut CursiveRunnable) {
     //                      .button("Quit", |s| s.quit()));
 }
 
-fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char) {
+fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char, should_autorun: bool) {
     let mut siv = cursive::default();
     let mut display_tv = TextView::new("Waiting to draw to display...");
     let mut op_tv = TextView::new("Press \"n\" to run!");
@@ -427,17 +431,24 @@ fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char) {
 
     // Starts the event loop.
 
-    siv.set_user_data(chip8);
-    siv.add_global_callback('n', move |s| {
-        // Next step
-        let (b0, b1) = chip8.fetch();
-        chip8.decode_execute(b0, b1);
-        decode_print_byte_gui(&op_content, b0, b1, true);
-        gui_debug_registers(&chip8, &register_content);
-        if chip8.should_draw {
-            display_render_gui(&chip8, glyph, &display_content);
-            chip8.should_draw = false;
-            // TODO Need to implement timers for sounds and delays
+    // siv.set_user_data(chip8);
+    // siv.add_global_callback('n', move |s| {
+    // });
+
+    siv.set_autorefresh(should_autorun);
+    std::thread::spawn(move|| {
+        loop {
+            // Next step
+            let (b0, b1) = chip8.fetch();
+            chip8.decode_execute(b0, b1);
+            decode_print_byte_gui(&op_content, b0, b1, true);
+            gui_debug_registers(&chip8, &register_content);
+            if chip8.should_draw {
+                display_render_gui(&chip8, glyph, &display_content);
+                chip8.should_draw = false;
+                // TODO Need to implement timers for sounds and delays
+            }
+            std::thread::sleep_ms(167)
         }
     });
     siv.run();
@@ -483,7 +494,7 @@ fn gui_debug_registers(chip8: &Chip8, tv: &TextContent) {
     tv.set_content("PC    SP    I\n");
     tv.append(format!("{:#X} {:#X} {:#X}\n", chip8.pc, chip8.sp, chip8.i));
     tv.append("v0 v1 v2 v3 v4 v5 v6 v7 v8 v9 va vb vc vd ve vf dt st  k\n");
-    tv.append(format!("{:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X}  {:X} {:X} {:X} {:X}", 
+    tv.append(format!("{:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X} {:2X}", 
             chip8.v[0], chip8.v[1], chip8.v[2], chip8.v[3],
             chip8.v[4], chip8.v[5], chip8.v[6], chip8.v[7],
             chip8.v[8], chip8.v[9], chip8.v[10], chip8.v[11],
