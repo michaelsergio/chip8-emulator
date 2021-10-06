@@ -1,5 +1,6 @@
 pub mod cursive_renderer;
 pub mod emu_utils;
+pub mod raylib_renderer;
 extern crate rand;
 
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.1

@@ -1,8 +1,8 @@
 use crate::chip8::cursive_renderer;
+use crate::chip8::raylib_renderer;
 use crate::chip8::emu_utils;
 use crate::chip8::emu_utils::{display_render, display_text};
 use crate::chip8::Chip8;
-use crate::chip8::Font;
 use crate::chip8::COLS;
 use crate::chip8::DISPLAY;
 use crate::chip8::ECHO_SOUND;
@@ -69,7 +69,8 @@ fn main() {
     }
 
     if opt.gui_mode {
-        cursive_renderer::run_gui_emulator(opt.file.as_path(), false, glyph, opt.autorun);
+        //cursive_renderer::run_gui_emulator(opt.file.as_path(), false, glyph, opt.autorun);
+        raylib_renderer::run();
     } else {
         run_emulator(opt.file.as_path(), opt.iterations, opt.registers, glyph);
     }
