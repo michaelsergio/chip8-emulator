@@ -1,20 +1,20 @@
-use crate::chip8::Font;
-use crate::chip8::DISPLAY;
-use crate::chip8::COLS;
-use crate::chip8::ROWS;
-use crate::chip8::ROW_LEN;
-use crate::chip8::MEMORY_SIZE;
-use crate::chip8::ECHO_SOUND;
-use crate::chip8::Chip8;
-use std::env;
-use std::fs;
-use std::path::PathBuf;
-use std::path::Path;
-use structopt::StructOpt;
-use c8_disasm_lib::decode;
 use crate::chip8::cursive_renderer;
 use crate::chip8::emu_utils;
 use crate::chip8::emu_utils::{display_render, display_text};
+use crate::chip8::Chip8;
+use crate::chip8::Font;
+use crate::chip8::COLS;
+use crate::chip8::DISPLAY;
+use crate::chip8::ECHO_SOUND;
+use crate::chip8::MEMORY_SIZE;
+use crate::chip8::ROWS;
+use crate::chip8::ROW_LEN;
+use c8_disasm_lib::decode;
+use std::env;
+use std::fs;
+use std::path::Path;
+use std::path::PathBuf;
+use structopt::StructOpt;
 
 const GLYPH_BLOCK: char = '\u{2588}';
 const GLYPH_X: char = 'x';
@@ -22,7 +22,6 @@ const GLYPH_X: char = 'x';
 #[derive(StructOpt, Debug)]
 #[structopt(name = "chip8-emulator")]
 struct Opt {
-
     #[structopt(short = "f", long = "font-check")]
     font_check: bool,
 
@@ -35,14 +34,13 @@ struct Opt {
     #[structopt(short, long)]
     autorun: bool,
 
-
     #[structopt(short = "x", long = "block")]
     override_glyph: Option<char>,
 
     #[structopt(short, long)]
     registers: bool,
 
-    #[structopt(short = "n", long = "iterations", default_value="10")]
+    #[structopt(short = "n", long = "iterations", default_value = "10")]
     iterations: u32,
 
     /// Files to process
@@ -57,7 +55,7 @@ fn main() {
     //println!("{:#?}", opt);
 
     let lang = env::var("LANG").unwrap_or("".to_string());
-    let glyph = determine_display_glyph(opt.override_glyph, lang); 
+    let glyph = determine_display_glyph(opt.override_glyph, lang);
 
     if opt.font_check {
         emu_utils::dump_fonts(glyph);
@@ -85,13 +83,12 @@ fn determine_display_glyph(override_glyph: Option<char>, lang: String) -> char {
     return match lang.to_lowercase().contains("utf-8") {
         true => GLYPH_BLOCK,
         false => GLYPH_X,
-    }
-} 
-
+    };
+}
 
 fn bios_check(glyph: char) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
-    let mut chip8 = Chip8 { 
+    let mut chip8 = Chip8 {
         memory: memory,
         v: [0; 16],
         address: 0,
@@ -129,10 +126,9 @@ fn bios_check(glyph: char) {
     display_text(&mut chip8, glyph);
 }
 
-
 fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char) {
     let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
-    let mut chip8 = Chip8 { 
+    let mut chip8 = Chip8 {
         memory: memory,
         v: [0; 16],
         address: 0,
@@ -146,7 +142,7 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
         wait_key: false,
         wait_key_v_x: 0,
     };
-    
+
     // Input - hex keyboard: 16 keys 0-F.
     // 1 2 3 C
     // 4 5 6 D
@@ -159,19 +155,25 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
     // Sprites are 8 wide 1-15 in height
     // xor'd to screen pixels
     // Carry flag VF is set to 1 if pixels are flipped when sprite drawn or else 0
-    let graphics_state: [bool; ROWS*COLS] = [false; ROWS*COLS];
+    let graphics_state: [bool; ROWS * COLS] = [false; ROWS * COLS];
 
     // load fonts
     chip8.load_fonts();
 
-    // fetch 
+    // fetch
 
-    println!("Loading {} into memory", path.to_str().unwrap_or("BAD_PATH"));
+    println!(
+        "Loading {} into memory",
+        path.to_str().unwrap_or("BAD_PATH")
+    );
     let bytes = match fs::read(path) {
         Ok(x) => x,
         Err(_e) => {
-            println!("Could not read file from path: {}", path.to_str().unwrap_or("BAD_PATH"));
-            return
+            println!(
+                "Could not read file from path: {}",
+                path.to_str().unwrap_or("BAD_PATH")
+            );
+            return;
         }
     };
     let start = chip8::DATA;
@@ -181,7 +183,9 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
 
     chip8.pc = 0x200;
 
-    if debug_registers { console_debug_registers(&chip8); }
+    if debug_registers {
+        console_debug_registers(&chip8);
+    }
 
     for _ in 0..iterations {
         let (b0, b1) = chip8.fetch();
@@ -192,7 +196,9 @@ fn run_emulator(path: &Path, iterations: u32, debug_registers: bool, glyph: char
             decode_print_byte(b0, b1, true);
         }
         chip8.decode_execute(b0, b1);
-        if debug_registers { console_debug_registers(&chip8); }
+        if debug_registers {
+            console_debug_registers(&chip8);
+        }
         if chip8.should_draw {
             display_render(&chip8, debug_registers, glyph);
             chip8.should_draw = false;
@@ -225,5 +231,3 @@ fn console_debug_registers(chip8: &Chip8) {
              chip8.v[12], chip8.v[13], chip8.v[14], chip8.v[15],
             chip8.timer_delay, chip8.timer_sound, chip8.keyboard);
 }
-
-

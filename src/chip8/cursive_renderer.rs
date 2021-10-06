@@ -1,18 +1,18 @@
-use cursive::CursiveRunnable;
-use crate::DISPLAY;
-use crate::COLS;
-use crate::ROWS;
-use crate::ROW_LEN;
 use crate::chip8::DATA;
 use crate::chip8::MEMORY_SIZE;
 use crate::Chip8;
+use crate::COLS;
+use crate::DISPLAY;
+use crate::ROWS;
+use crate::ROW_LEN;
+use c8_disasm_lib::decode;
 use cursive::view::Resizable;
 use cursive::views::DummyView;
 use cursive::views::LinearLayout;
 use cursive::views::TextContent;
-use cursive::views::{TextView};
+use cursive::views::TextView;
+use cursive::CursiveRunnable;
 use std::fs;
-use c8_disasm_lib::decode;
 use std::path::Path;
 
 pub fn display_render_gui(chip8: &Chip8, glyph: char, tv: &TextContent) {
@@ -27,12 +27,12 @@ pub fn display_render_gui(chip8: &Chip8, glyph: char, tv: &TextContent) {
         let row_start = DISPLAY + (row_i * ROW_LEN);
         // print each col for row
         for i in 0..(COLS / 8) {
-                let byte: u8 = chip8.memory[row_start + i];
-                for b in 0..8 {
-                        let bit = byte & (0x1 << 7 - b);
-                        let draw = if bit == 0 { ' ' } else { glyph };
-                        tv.append(draw);
-                }
+            let byte: u8 = chip8.memory[row_start + i];
+            for b in 0..8 {
+                let bit = byte & (0x1 << 7 - b);
+                let draw = if bit == 0 { ' ' } else { glyph };
+                tv.append(draw);
+            }
         }
         tv.append("\n");
     }
@@ -73,19 +73,20 @@ pub fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char, should_
     let register_content = register_tv.get_shared_content();
     // siv.add_layer(op_tv);
     // siv.add_layer(display_tv);
-    siv.add_layer(LinearLayout::vertical()
-        .child(display_tv)
-        .child(DummyView.fixed_height(1))
-        .child(op_tv)
-        .child(DummyView.fixed_height(1))
-        .child(register_tv)
+    siv.add_layer(
+        LinearLayout::vertical()
+            .child(display_tv)
+            .child(DummyView.fixed_height(1))
+            .child(op_tv)
+            .child(DummyView.fixed_height(1))
+            .child(register_tv),
     );
     siv.add_global_callback('q', |s| s.quit());
-        //Dialog::around(tv).title("Cursive").button("Quit", |s| s.quit()));
+    //Dialog::around(tv).title("Cursive").button("Quit", |s| s.quit()));
     setup_gui(&mut siv);
 
-    let memory: [u8; MEMORY_SIZE] =  [0; MEMORY_SIZE];
-    let mut chip8 = Chip8 { 
+    let memory: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
+    let mut chip8 = Chip8 {
         memory: memory,
         v: [0; 16],
         address: 0,
@@ -99,7 +100,7 @@ pub fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char, should_
         wait_key: false,
         wait_key_v_x: 0,
     };
-    
+
     // Input - hex keyboard: 16 keys 0-F.
     // 1 2 3 C
     // 4 5 6 D
@@ -112,19 +113,25 @@ pub fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char, should_
     // Sprites are 8 wide 1-15 in height
     // xor'd to screen pixels
     // Carry flag VF is set to 1 if pixels are flipped when sprite drawn or else 0
-    let graphics_state: [bool; ROWS*COLS] = [false; ROWS*COLS];
+    let graphics_state: [bool; ROWS * COLS] = [false; ROWS * COLS];
 
     // load fonts
     chip8.load_fonts();
 
-    // fetch 
+    // fetch
 
-    println!("Loading {} into memory", path.to_str().unwrap_or("BAD_PATH"));
+    println!(
+        "Loading {} into memory",
+        path.to_str().unwrap_or("BAD_PATH")
+    );
     let bytes = match fs::read(path) {
         Ok(x) => x,
         Err(_e) => {
-            println!("Could not read file from path: {}", path.to_str().unwrap_or("BAD_PATH"));
-            return
+            println!(
+                "Could not read file from path: {}",
+                path.to_str().unwrap_or("BAD_PATH")
+            );
+            return;
         }
     };
     let start = DATA;
@@ -141,7 +148,7 @@ pub fn run_gui_emulator(path: &Path, debug_registers: bool, glyph: char, should_
     // });
 
     siv.set_autorefresh(should_autorun);
-    std::thread::spawn(move|| {
+    std::thread::spawn(move || {
         loop {
             // Next step
             let (b0, b1) = chip8.fetch();

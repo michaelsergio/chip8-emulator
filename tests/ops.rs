@@ -4,14 +4,14 @@ mod tests {
 
     #[test]
     fn it_works() {
-            assert_eq!(2 + 2, 4);
+        assert_eq!(2 + 2, 4);
     }
 
     /*
     #[test]
     fn add_op() {
         let memory: [u8; 4096] = [0; 4096];
-        let mut chip8 = Chip8 { 
+        let mut chip8 = Chip8 {
             memory: memory,
             v: [0; 16],
             address: 0,
@@ -24,5 +24,4 @@ mod tests {
         assert_eq!(chip8.v[0], 42);
     }
     */
-
 }
